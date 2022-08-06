@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import Experience from "../Experience";
+import { gsap } from "gsap";
 
 // Shaders
 import vertex from "./shaders/vertex.glsl";
@@ -12,6 +13,8 @@ export default class Circle {
     this.debug = this.experience.debug;
     this.scene = this.experience.scene;
     this.time = this.experience.time;
+
+    this.isAnimated = false;
 
     if (this.debug) {
       this.debugFolder = this.debug.addFolder("sphere");
@@ -28,12 +31,16 @@ export default class Circle {
       },
     };
 
+    this.isAnimated = { value: 0 };
+
     this.setMouse();
 
     this.setGeometry();
     this.setMaterial();
     this.setMesh();
     this.setGroup();
+
+    this.animIn();
   }
 
   setGeometry() {
@@ -44,7 +51,7 @@ export default class Circle {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uGradient: { value: 0 },
+        uGradient: { value: 1 },
       },
       vertexShader: vertex,
       fragmentShader: fragment,
@@ -68,14 +75,14 @@ export default class Circle {
 
     for (let i = 0; i < nb; i++) {
       const newCircle = this.mesh.clone();
-      newCircle.position.y = i * 0.05;
-      newCircle.position.x = i * 0.04;
-      newCircle.position.z = -i * 0.2;
+      // newCircle.position.y = i * 0.05;
+      // newCircle.position.x = i * 0.04;
+      // newCircle.position.z = -i * 0.2;
 
       this.group.add(newCircle);
     }
 
-    this.group.position.x = 1.3;
+    this.group.position.x = 1.7;
     this.group.position.y = 0.1;
 
     this.scene.add(this.group);
@@ -101,18 +108,54 @@ export default class Circle {
 
     this.group.children.forEach((mesh, i) => {
       const index = i + 1;
-      // mesh.rotation.z += this.time.delta * i * 0.0005;
-      mesh.position.x = index * 0.1 + (this.mouse.current.x - 0.5) * index * index * amtPosition * 0.7;
-      mesh.position.y = index * 0.05 - (this.mouse.current.y - 0.5) * index * index * amtPosition * 0.5;
       mesh.rotation.z = this.time.elapsed * amtRotation + index * 0.2;
-      // mesh.material.uniforms.uGradient.value = index / 200;
+
+      mesh.position.x = this.isAnimated.value * (this.mouse.current.x * index * index * amtPosition * 0.7);
+      mesh.position.y = this.isAnimated.value * ((this.mouse.current.y - 0.5) * index * index * amtPosition * 0.7);
+
+      if (i > 0) {
+        mesh.material.opacity = 0;
+      }
+    });
+  }
+
+  animIn() {
+    const tl = gsap.timeline();
+
+    tl.to(this.material.uniforms.uGradient, {
+      value: 0,
+      duration: 4,
+      ease: "expo.out",
+    });
+    tl.to(
+      this.group.position,
+      {
+        x: 1.3,
+        duration: 3,
+        ease: "expo.out",
+      },
+      "<"
+    );
+    tl.to(
+      this.isAnimated,
+      {
+        value: 1,
+        duration: 4,
+        ease: "expo.inOut",
+      },
+      "<"
+    );
+    this.group.children.forEach((mesh, i) => {
+      gsap.to(mesh.position, {
+        z: -i * 0.2,
+        duration: 4,
+        ease: "expo.inOut",
+      });
     });
   }
 
   update() {
     this.updateMouse();
-
-    console.log(this.time);
 
     if (!this.group.children.length) return;
     this.updateGroup();

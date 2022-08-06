@@ -21,6 +21,10 @@ body {
   color: white;
 }
 
+span {
+  display: inline-block;
+}
+
 h1 {
   font-size: 110px;
   font-weight: 400;
@@ -60,7 +64,7 @@ a:before {
 
   transform: scaleX(0%);
   transition: transform 300ms ease-out;
-  animation: drawLine 1s ease-in-out 300ms forwards;
+  animation: drawLine 2s ease-in-out 1s forwards;
 }
 
 .experience {
